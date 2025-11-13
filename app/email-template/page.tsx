@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
@@ -20,7 +20,7 @@ const FONT_OPTIONS = [
   'Trebuchet MS, sans-serif',
 ];
 
-export default function EmailTemplatePage() {
+function EmailTemplateContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get('eventId');
@@ -502,6 +502,14 @@ export default function EmailTemplatePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function EmailTemplatePage() {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      <EmailTemplateContent />
+    </Suspense>
   );
 }
 
