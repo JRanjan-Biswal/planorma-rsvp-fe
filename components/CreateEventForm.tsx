@@ -24,6 +24,7 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
     location: '',
     category: '',
     capacity: '',
+    allowedCompanions: '0',
     hostName: '',
     hostMobile: '',
     hostEmail: '',
@@ -63,6 +64,7 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
         location: formData.location,
         category: formData.category,
         capacity: parseInt(formData.capacity),
+        allowedCompanions: parseInt(formData.allowedCompanions),
         hostName: formData.hostName,
         hostMobile: formData.hostMobile,
         hostEmail: formData.hostEmail,
@@ -172,7 +174,18 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
           value={formData.capacity}
           onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
           error={errors.capacity}
-          min="1"
+          min="10"
+          required
+        />
+
+        <Input
+          label="Allowed Companions per Guest"
+          type="number"
+          value={formData.allowedCompanions}
+          onChange={(e) => setFormData({ ...formData, allowedCompanions: e.target.value })}
+          error={errors.allowedCompanions}
+          min="0"
+          max="10"
           required
         />
 

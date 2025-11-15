@@ -20,6 +20,7 @@ interface Event {
   location: string;
   category: string;
   capacity: number;
+  allowedCompanions: number;
 }
 
 interface TokenData {
@@ -383,30 +384,32 @@ export default function EventRSVPPage() {
                     exit={{ opacity: 0, height: 0 }}
                     className="mb-6 space-y-4"
                   >
-                    {/* Companion Toggle */}
-                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg">
-                      <div>
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          Bringing a companion?
-                        </label>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Toggle on if you're bringing someone with you
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setWithCompanion(!withCompanion)}
-                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                          withCompanion ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
-                            withCompanion ? 'translate-x-7' : 'translate-x-1'
+                    {/* Companion Toggle - only show if allowedCompanions > 0 */}
+                    {event.allowedCompanions > 0 && (
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg">
+                        <div>
+                          <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Bringing a companion?
+                          </label>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Toggle on if you're bringing someone with you (up to {event.allowedCompanions} companion{event.allowedCompanions > 1 ? 's' : ''})
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setWithCompanion(!withCompanion)}
+                          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                            withCompanion ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
                           }`}
-                        />
-                      </button>
-                    </div>
+                        >
+                          <span
+                            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+                              withCompanion ? 'translate-x-7' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    )}
 
                     {/* User Dietary Preference */}
                     <div>

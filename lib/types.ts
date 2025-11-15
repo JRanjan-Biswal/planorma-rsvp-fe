@@ -6,6 +6,7 @@ export interface Event {
   location: string;
   category: string;
   capacity: number;
+  allowedCompanions: number;
   hostName: string;
   hostMobile: string;
   hostEmail: string;

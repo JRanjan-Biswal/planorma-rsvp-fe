@@ -25,6 +25,7 @@ interface Event {
   location: string;
   category: string;
   capacity: number;
+  allowedCompanions: number;
   hostName: string;
   hostMobile: string;
   hostEmail: string;
@@ -65,6 +66,7 @@ export default function EventPage() {
     location: '',
     category: '',
     capacity: 0,
+    allowedCompanions: 0,
     hostName: '',
     hostMobile: '',
     hostEmail: '',
@@ -222,6 +224,7 @@ export default function EventPage() {
         location: event.location,
         category: event.category,
         capacity: event.capacity,
+        allowedCompanions: event.allowedCompanions || 0,
         hostName: event.hostName,
         hostMobile: event.hostMobile,
         hostEmail: event.hostEmail,
@@ -955,7 +958,18 @@ export default function EventPage() {
                 value={editFormData.capacity.toString()}
                 onChange={(e) => setEditFormData({ ...editFormData, capacity: parseInt(e.target.value) || 0 })}
                 placeholder="100"
-                min="1"
+                min="10"
+                required
+              />
+
+              <Input
+                label="Allowed Companions per Guest"
+                type="number"
+                value={editFormData.allowedCompanions.toString()}
+                onChange={(e) => setEditFormData({ ...editFormData, allowedCompanions: parseInt(e.target.value) || 0 })}
+                placeholder="0"
+                min="0"
+                max="10"
                 required
               />
 
