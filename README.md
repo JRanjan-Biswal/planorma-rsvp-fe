@@ -1,4 +1,4 @@
-# Planorama Events - RSVP Application
+# HappyHosts Events - RSVP Application
 
 A modern, secure event management and RSVP application built with Next.js, featuring authentication, dark/light mode, and comprehensive event filtering capabilities.
 
@@ -30,7 +30,7 @@ A modern, secure event management and RSVP application built with Next.js, featu
 ## Project Structure
 
 ```
-planorama-rsvp-assignment/
+happyhosts-rsvp-assignment/
 ├── frontend/
 │   ├── app/
 │   │   ├── create-event/
@@ -70,7 +70,7 @@ planorama-rsvp-assignment/
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd planorama-rsvp-assignment
+cd happyhosts-rsvp-assignment
 ```
 
 2. Install backend dependencies:
@@ -90,7 +90,7 @@ npm install
 **Backend** (`backend/.env`):
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://jranjan2016_db_user:bsCjx25grPUiQp62@cluster0.6eoqlon.mongodb.net/planorama?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://jranjan2016_db_user:bsCjx25grPUiQp62@cluster0.6eoqlon.mongodb.net/happyhosts?retryWrites=true&w=majority
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
 NODE_ENV=development
@@ -187,8 +187,8 @@ Before deploying to production:
 
 ## License
 
-This project is created for the Planorama interview assignment.
+This project is created for the HappyHosts interview assignment.
 
 ## Author
 
-Built as a technical assessment for Planorama.
+Built as a technical assessment for HappyHosts.

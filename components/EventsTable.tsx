@@ -27,9 +27,6 @@ export function EventsTable({ events }: EventsTableProps) {
               Date & Time
             </th>
             <th className="px-6 py-4 text-left text-xs font-semibold text-secondary dark:text-secondary uppercase tracking-wider">
-              Location
-            </th>
-            <th className="px-6 py-4 text-left text-xs font-semibold text-secondary dark:text-secondary uppercase tracking-wider">
               RSVPs
             </th>
             <th className="px-6 py-4 text-center text-xs font-semibold text-secondary dark:text-secondary uppercase tracking-wider">
@@ -97,11 +94,6 @@ export function EventsTable({ events }: EventsTableProps) {
                     <div className="text-xs text-gray-600 dark:text-gray-400">
                       {format(eventDate, 'h:mm a')}
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900 dark:text-gray-100">
-                    {event.location}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

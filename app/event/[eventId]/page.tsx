@@ -334,43 +334,42 @@ export default function EventPage() {
       <Header />
       <div className="py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center">
-            <Button
-              variant="outline"
-              onClick={() => router.push('/')}
-              className="mb-6"
-            >
-              ← Back to Events
-            </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push('/')}
+            className="mb-6"
+            size="sm"
+          >
+            ← Back to Events
+          </Button>
 
-            {/* Page Header */}
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="mb-6"
-            >
-              <div className="flex items-center gap-3">
-                <h1 className="text-4xl font-bold text-secondary mb-2">{event.title}</h1>
-                {eventStatus === 'expired' && (
-                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
-                    Expired
-                  </span>
-                )}
-                {eventStatus === 'active' && (
-                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300">
-                    Active
-                  </span>
-                )}
-                {eventStatus === 'upcoming' && (
-                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
-                    Upcoming
-                  </span>
-                )}
-              </div>
-              <p className="text-gray-600 dark:text-gray-400">Manage your event and invitations</p>
-            </motion.div>
-          </div>
+          {/* Page Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-secondary">{event.title}</h1>
+              {eventStatus === 'expired' && (
+                <span className="px-3 py-1 text-xs sm:text-sm font-medium rounded-full bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 self-start sm:self-auto">
+                  Expired
+                </span>
+              )}
+              {eventStatus === 'active' && (
+                <span className="px-3 py-1 text-xs sm:text-sm font-medium rounded-full bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300 self-start sm:self-auto">
+                  Active
+                </span>
+              )}
+              {eventStatus === 'upcoming' && (
+                <span className="px-3 py-1 text-xs sm:text-sm font-medium rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 self-start sm:self-auto">
+                  Upcoming
+                </span>
+              )}
+            </div>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">Manage your event and invitations</p>
+          </motion.div>
 
           {/* Success/Error Messages */}
           {isExpired && (
@@ -422,15 +421,16 @@ export default function EventPage() {
           >
             <Accordion title="Event Details" defaultOpen={false}>
               <div className="space-y-4">
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                   <div className="flex-1">
                     <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1">Description</h4>
-                    <p className="text-gray-700 dark:text-gray-300">{event.description}</p>
+                    <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{event.description}</p>
                   </div>
                   <Button
                     variant="outline"
                     onClick={handleEditClick}
-                    className="ml-4"
+                    size="sm"
+                    className="w-full sm:w-auto sm:ml-4 whitespace-nowrap"
                   >
                     ✏️ Edit Event
                   </Button>
@@ -496,17 +496,17 @@ export default function EventPage() {
                   <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">🔗 Shareable RSVP Link</h4>
                   {isExpired ? (
                     <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                         Public RSVP link is disabled because this event has expired.
                       </p>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3">
                         Share this link with anyone to allow them to RSVP without needing an individual invitation.
                       </p>
-                      <div className="flex gap-2">
-                        <div className="flex-1 px-4 py-3 rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 text-sm break-all">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <div className="flex-1 px-3 sm:px-4 py-2 sm:py-3 rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 text-xs sm:text-sm break-all">
                           {typeof window !== 'undefined' ? `${window.location.origin}/event/${eventId}/rsvp` : ''}
                         </div>
                         <Button
@@ -517,7 +517,8 @@ export default function EventPage() {
                             setSuccessMessage('Link copied to clipboard!');
                             setTimeout(() => setSuccessMessage(null), 3000);
                           }}
-                          className="whitespace-nowrap"
+                          size="sm"
+                          className="whitespace-nowrap w-full sm:w-auto"
                         >
                           📋 Copy Link
                         </Button>
@@ -550,25 +551,30 @@ export default function EventPage() {
             transition={{ duration: 0.3, delay: 0.3 }}
           >
             <Card>
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-secondary">Invited Users</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <h2 className="text-xl sm:text-2xl font-bold text-secondary">Invited Users</h2>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
                     {totalTokens} {totalTokens === 1 ? 'person' : 'people'} total (private invites + public RSVPs)
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                   <Button
                     variant="outline"
                     onClick={handleResetFilters}
                     disabled={!searchInput && !statusFilter && !inviteTypeFilter}
+                    size="sm"
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                   >
-                    ✕ Clear Filters
+                    <span className="hidden sm:inline">✕ Clear Filters</span>
+                    <span className="sm:hidden">✕ Clear</span>
                   </Button>
                   <Button
                     variant="outline"
                     onClick={handleRefresh}
                     disabled={isRefreshing}
+                    size="sm"
+                    className="flex-1 sm:flex-none text-xs sm:text-sm"
                   >
                     {isRefreshing ? (
                       <>
@@ -576,22 +582,26 @@ export default function EventPage() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Refreshing...
+                        <span className="hidden sm:inline">Refreshing...</span>
+                        <span className="sm:hidden">...</span>
                       </>
                     ) : (
                       <>
-                        <RefreshIcon className="w-4 h-4 mr-2 inline" />
-                        Refresh
+                        <RefreshIcon className="w-4 h-4 mr-0 sm:mr-2 inline" />
+                        <span className="hidden sm:inline">Refresh</span>
                       </>
                     )}
                   </Button>
-                  <div className={isExpired ? 'relative inline-block' : ''}>
+                  <div className={`flex-1 sm:flex-none ${isExpired ? 'relative inline-block' : ''}`}>
                     <Button
                       variant="primary"
                       onClick={() => setIsInviteModalOpen(true)}
                       disabled={isExpired}
+                      size="sm"
+                      className="w-full text-xs sm:text-sm"
                     >
-                      + Invite User
+                      <span className="hidden sm:inline">+ Invite User</span>
+                      <span className="sm:hidden">+ Invite</span>
                     </Button>
                     {isExpired && (
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
@@ -743,32 +753,40 @@ export default function EventPage() {
 
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalTokens)} of {totalTokens} results
+                <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
+                    <span className="hidden sm:inline">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalTokens)} of {totalTokens} results
+                    </span>
+                    <span className="sm:hidden">
+                      Page {currentPage} of {totalPages}
+                    </span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap justify-center">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
+                      className="text-xs sm:text-sm px-2 sm:px-3"
                     >
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
+                      <span className="sm:hidden">Prev</span>
                     </Button>
                     <div className="flex items-center gap-1">
                       {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        // Show first page, last page, current page, and pages around current
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
+                        // On mobile, show fewer pages: only first, last, current, and immediate neighbors
+                        const isMobileView = typeof window !== 'undefined' && window.innerWidth < 640;
+                        const shouldShow = isMobileView
+                          ? (page === 1 || page === totalPages || page === currentPage)
+                          : (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1));
+                        
+                        if (shouldShow) {
                           return (
                             <button
                               key={page}
                               onClick={() => setCurrentPage(page)}
-                              className={`px-3 py-1 rounded text-sm ${currentPage === page
+                              className={`px-2 sm:px-3 py-1 rounded text-xs sm:text-sm min-w-[32px] sm:min-w-[36px] ${currentPage === page
                                 ? 'bg-primary text-white'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
@@ -777,10 +795,10 @@ export default function EventPage() {
                             </button>
                           );
                         } else if (
-                          page === currentPage - 2 ||
-                          page === currentPage + 2
+                          (isMobileView && (page === currentPage - 1 || page === currentPage + 1)) ||
+                          (!isMobileView && (page === currentPage - 2 || page === currentPage + 2))
                         ) {
-                          return <span key={page} className="px-2 text-gray-500">...</span>;
+                          return <span key={page} className="px-1 text-gray-500 text-xs">...</span>;
                         }
                         return null;
                       })}
@@ -790,6 +808,7 @@ export default function EventPage() {
                       size="sm"
                       onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                       disabled={currentPage === totalPages}
+                      className="text-xs sm:text-sm px-2 sm:px-3"
                     >
                       Next
                     </Button>

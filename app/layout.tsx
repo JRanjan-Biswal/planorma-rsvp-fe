@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Planorama Events - RSVP Application",
+  title: "HappyHosts Events - RSVP Application",
   description: "Manage and RSVP to events with ease",
 };
 

@@ -39,8 +39,7 @@ export default function Home() {
     let filtered = events.filter((event) => {
       const matchesSearch =
         event.title.toLowerCase().includes(search.toLowerCase()) ||
-        event.description.toLowerCase().includes(search.toLowerCase()) ||
-        event.location.toLowerCase().includes(search.toLowerCase());
+        event.description.toLowerCase().includes(search.toLowerCase());
 
       const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
 
