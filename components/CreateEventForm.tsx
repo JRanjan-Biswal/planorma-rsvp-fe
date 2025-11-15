@@ -138,10 +138,11 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
           required
         >
           <option value="">Select a category</option>
-          <option value="Technology">Technology</option>
-          <option value="Networking">Networking</option>
-          <option value="Education">Education</option>
-          <option value="Charity">Charity</option>
+          <option value="Wedding">Wedding</option>
+          <option value="Marriage">Marriage</option>
+          <option value="Party">Party</option>
+          <option value="Conference">Conference</option>
+          <option value="Birthday">Birthday</option>
           <option value="Business">Business</option>
           <option value="Wellness">Wellness</option>
           <option value="Entertainment">Entertainment</option>

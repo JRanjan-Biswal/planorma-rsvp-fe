@@ -7,9 +7,11 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
+import { Select } from '@/components/Select';
 import { Header } from '@/components/Header';
 import { Accordion } from '@/components/Accordion';
 import { Modal } from '@/components/Modal';
+import { RefreshIcon } from '@/components/RefreshIcon';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { eventsApi, tokensApi, rsvpsApi } from '@/lib/api/client';
@@ -31,10 +33,11 @@ interface UserToken {
   id: string;
   email: string;
   name: string | null;
-  token: string;
+  token: string | null;
   rsvpStatus: 'going' | 'maybe' | 'not-going' | null;
   companions: number;
   createdAt: string;
+  isPrivateInvite: boolean;
 }
 
 export default function EventPage() {
@@ -49,6 +52,7 @@ export default function EventPage() {
   const [inviteName, setInviteName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isInviting, setIsInviting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -77,7 +81,9 @@ export default function EventPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTokens, setTotalTokens] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState(''); // Immediate input value for debouncing
   const [statusFilter, setStatusFilter] = useState('');
+  const [inviteTypeFilter, setInviteTypeFilter] = useState(''); // 'private', 'public', or ''
   const [itemsPerPage] = useState(10);
 
   // Track if we've already fetched for this event to prevent loops
@@ -94,10 +100,20 @@ export default function EventPage() {
       hasFetchedRef.current = eventId;
       fetchEvent();
       fetchDietaryStats();
-      fetchUserTokens(); // Initial fetch of tokens
+      fetchUserTokens(); // Initial fetch of tokens (now includes public RSVPs)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, eventId]);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setCurrentPage(1);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
 
   // Fetch tokens when pagination or filters change
   useEffect(() => {
@@ -105,7 +121,7 @@ export default function EventPage() {
       fetchUserTokens();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, searchQuery, statusFilter]);
+  }, [currentPage, searchQuery, statusFilter, inviteTypeFilter]);
 
   const fetchEvent = async () => {
     try {
@@ -128,13 +144,37 @@ export default function EventPage() {
 
   const fetchUserTokens = async () => {
     try {
-      const data = await tokensApi.getAll(eventId, currentPage, itemsPerPage, searchQuery, statusFilter);
+      const data = await tokensApi.getAll(eventId, currentPage, itemsPerPage, searchQuery, statusFilter, inviteTypeFilter);
       setUserTokens(data.tokens);
       setTotalPages(data.pagination.totalPages);
       setTotalTokens(data.pagination.total);
     } catch (err) {
       console.error('Failed to load tokens');
     }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchUserTokens();
+      setSuccessMessage('List refreshed successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      setError('Failed to refresh list');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearchInput('');
+    setSearchQuery('');
+    setStatusFilter('');
+    setInviteTypeFilter('');
+    setCurrentPage(1);
+    setSuccessMessage('Filters cleared!');
+    setTimeout(() => setSuccessMessage(null), 2000);
   };
 
   const fetchDietaryStats = async () => {
@@ -202,6 +242,7 @@ export default function EventPage() {
       });
       setEvent(updatedEvent);
       setSuccessMessage('Event updated successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
       setIsEditModalOpen(false);
     } catch (err: any) {
       setError(err?.message || 'Failed to update event');
@@ -281,24 +322,26 @@ export default function EventPage() {
       <Header />
       <div className="py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Button
-            variant="outline"
-            onClick={() => router.push('/')}
-            className="mb-6"
-          >
-            ← Back to Events
-          </Button>
+          <div className="flex justify-between items-center">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/')}
+              className="mb-6"
+            >
+              ← Back to Events
+            </Button>
 
-          {/* Page Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mb-6"
-          >
-            <h1 className="text-4xl font-bold text-secondary mb-2">{event.title}</h1>
-            <p className="text-gray-600 dark:text-gray-400">Manage your event and invitations</p>
-          </motion.div>
+            {/* Page Header */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="mb-6"
+            >
+              <h1 className="text-4xl font-bold text-secondary mb-2">{event.title}</h1>
+              <p className="text-gray-600 dark:text-gray-400">Manage your event and invitations</p>
+            </motion.div>
+          </div>
 
           {/* Success/Error Messages */}
           {error && (
@@ -328,7 +371,7 @@ export default function EventPage() {
             transition={{ duration: 0.3, delay: 0.2 }}
             className="mb-6"
           >
-            <Accordion title="Event Details" defaultOpen={true}>
+            <Accordion title="Event Details" defaultOpen={false}>
               <div className="space-y-4">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
@@ -399,6 +442,31 @@ export default function EventPage() {
                   </div>
                 )}
 
+                {/* Shareable RSVP Link */}
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">🔗 Shareable RSVP Link</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    Share this link with anyone to allow them to RSVP without needing an individual invitation.
+                  </p>
+                  <div className="flex gap-2">
+                    <div className="flex-1 px-4 py-3 rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 text-sm break-all">
+                      {typeof window !== 'undefined' ? `${window.location.origin}/event/${eventId}/rsvp` : ''}
+                    </div>
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        const link = `${window.location.origin}/event/${eventId}/rsvp`;
+                        navigator.clipboard.writeText(link);
+                        setSuccessMessage('Link copied to clipboard!');
+                        setTimeout(() => setSuccessMessage(null), 3000);
+                      }}
+                      className="whitespace-nowrap"
+                    >
+                      📋 Copy Link
+                    </Button>
+                  </div>
+                </div>
+
                 {/* Customize Invite Button */}
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <Button
@@ -427,26 +495,54 @@ export default function EventPage() {
                 <div>
                   <h2 className="text-2xl font-bold text-secondary">Invited Users</h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {totalTokens} {totalTokens === 1 ? 'person' : 'people'} invited
+                    {totalTokens} {totalTokens === 1 ? 'person' : 'people'} total (private invites + public RSVPs)
                   </p>
                 </div>
-                <Button
-                  variant="primary"
-                  onClick={() => setIsInviteModalOpen(true)}
-                >
-                  + Invite User
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleResetFilters}
+                    disabled={!searchInput && !statusFilter && !inviteTypeFilter}
+                  >
+                    ✕ Clear Filters
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                  >
+                    {isRefreshing ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Refreshing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshIcon className="w-4 h-4 mr-2 inline" />
+                        Refresh
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => setIsInviteModalOpen(true)}
+                  >
+                    + Invite User
+                  </Button>
+                </div>
               </div>
 
               {/* Search and Filter */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <Input
                   label=""
                   type="text"
-                  value={searchQuery}
+                  value={searchInput}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
+                    setSearchInput(e.target.value);
                   }}
                   placeholder="Search by name or email..."
                 />
@@ -463,6 +559,20 @@ export default function EventPage() {
                     <option value="pending">Pending</option>
                     <option value="going">Going</option>
                     <option value="not-going">Not Going</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    value={inviteTypeFilter}
+                    onChange={(e) => {
+                      setInviteTypeFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary transition-colors"
+                  >
+                    <option value="">All Invites</option>
+                    <option value="private">Private Invite</option>
+                    <option value="public">Public RSVP</option>
                   </select>
                 </div>
               </div>
@@ -498,7 +608,10 @@ export default function EventPage() {
                           Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
-                          Invited On
+                          Private Invite
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                          Date
                         </th>
                         <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                           Actions
@@ -525,22 +638,34 @@ export default function EventPage() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             {getStatusBadge(token.rsvpStatus, token.companions)}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-3 py-1 text-xs font-medium rounded-full ${token.isPrivateInvite
+                                ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200'
+                                : 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                              }`}>
+                              {token.isPrivateInvite ? 'Yes' : 'No'}
+                            </span>
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                             {format(new Date(token.createdAt), 'MMM dd, yyyy')}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const url = `${window.location.origin}/event/${eventId}/${token.token}`;
-                                navigator.clipboard.writeText(url);
-                                setSuccessMessage('Invitation link copied to clipboard!');
-                                setTimeout(() => setSuccessMessage(null), 3000);
-                              }}
-                            >
-                              Copy Link
-                            </Button>
+                            {token.isPrivateInvite && token.token ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const url = `${window.location.origin}/event/${eventId}/${token.token}`;
+                                  navigator.clipboard.writeText(url);
+                                  setSuccessMessage('Invitation link copied to clipboard!');
+                                  setTimeout(() => setSuccessMessage(null), 3000);
+                                }}
+                              >
+                                Copy Link
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-gray-500 dark:text-gray-400 italic">Public RSVP</span>
+                            )}
                           </td>
                         </motion.tr>
                       ))}
@@ -577,8 +702,8 @@ export default function EventPage() {
                               key={page}
                               onClick={() => setCurrentPage(page)}
                               className={`px-3 py-1 rounded text-sm ${currentPage === page
-                                  ? 'bg-primary text-white'
-                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                ? 'bg-primary text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                                 }`}
                             >
                               {page}
@@ -711,14 +836,23 @@ export default function EventPage() {
                 required
               />
 
-              <Input
+              <Select
                 label="Category"
-                type="text"
                 value={editFormData.category}
                 onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                placeholder="Conference, Wedding, Party, etc."
                 required
-              />
+              >
+                <option value="">Select a category</option>
+                <option value="Wedding">Wedding</option>
+                <option value="Marriage">Marriage</option>
+                <option value="Party">Party</option>
+                <option value="Conference">Conference</option>
+                <option value="Birthday">Birthday</option>
+                <option value="Business">Business</option>
+                <option value="Wellness">Wellness</option>
+                <option value="Entertainment">Entertainment</option>
+                <option value="Social">Social</option>
+              </Select>
 
               <Input
                 label="Capacity"

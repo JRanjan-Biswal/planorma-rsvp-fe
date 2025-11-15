@@ -114,6 +114,29 @@ export const eventsApi = {
     return data.event;
   },
 
+  // Public endpoint - no auth required
+  getByIdPublic: async (id: string) => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/events/public/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(
+        errorData.error || `HTTP error! status: ${response.status}`,
+        response.status,
+        errorData
+      );
+    }
+
+    const data = await response.json();
+    return data.event;
+  },
+
   create: async (eventData: {
     title: string;
     description: string;
@@ -256,6 +279,78 @@ export const rsvpsApi = {
     const data = await apiRequest<{ nonveg: number; veg: number; vegan: number; notSpecified: number }>(`/rsvps/event/${eventId}/dietary-stats`);
     return data;
   },
+
+  getPublicRSVPs: async (eventId: string) => {
+    const data = await apiRequest<{ rsvps: any[] }>(`/rsvps/event/${eventId}/public-rsvps`);
+    return data.rsvps;
+  },
+
+  // Public RSVP endpoints (no token required)
+  submitPublicRSVP: async (
+    eventId: string,
+    status: 'going' | 'not-going',
+    guestName: string,
+    guestEmail: string,
+    companions: number = 0,
+    dietaryPreference?: 'nonveg' | 'veg' | 'vegan',
+    companionDietaryPreference?: 'nonveg' | 'veg' | 'vegan'
+  ) => {
+    const body: any = { 
+      status, 
+      guestName: guestName.trim(), 
+      guestEmail: guestEmail.trim(),
+      companions 
+    };
+    
+    // Only include optional fields if they have values
+    if (dietaryPreference) {
+      body.dietaryPreference = dietaryPreference;
+    }
+    if (companionDietaryPreference) {
+      body.companionDietaryPreference = companionDietaryPreference;
+    }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/rsvps/public/${eventId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(
+        errorData.error || `HTTP error! status: ${response.status}`,
+        response.status,
+        errorData
+      );
+    }
+
+    return response.json();
+  },
+
+  checkPublicRSVPStatus: async (eventId: string, email: string) => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/rsvps/public/${eventId}/check/${encodeURIComponent(email)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+      throw new ApiError(
+        errorData.error || `HTTP error! status: ${response.status}`,
+        response.status,
+        errorData
+      );
+    }
+
+    return response.json();
+  },
 };
 
 // Email Templates API
@@ -307,13 +402,15 @@ export const tokensApi = {
     page: number = 1,
     limit: number = 10,
     search: string = '',
-    status: string = ''
+    status: string = '',
+    inviteType: string = ''
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
       ...(search && { search }),
       ...(status && { status }),
+      ...(inviteType && { inviteType }),
     });
     const data = await apiRequest<{ tokens: any[]; pagination: any }>(`/tokens/${eventId}?${params}`);
     return data;
