@@ -15,6 +15,7 @@ import { RefreshIcon } from '@/components/RefreshIcon';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { eventsApi, tokensApi, rsvpsApi } from '@/lib/api/client';
+import { getEventStatus, isEventExpired } from '@/lib/utils';
 
 interface Event {
   id: string;
@@ -236,9 +237,18 @@ export default function EventPage() {
     setSuccessMessage(null);
 
     try {
+      // Validate that the event date is not in the past
+      const eventDateTime = new Date(editFormData.date);
+      const now = new Date();
+      if (eventDateTime < now) {
+        setError('Cannot update event to a past date. Please select a future date and time.');
+        setIsUpdating(false);
+        return;
+      }
+
       const updatedEvent = await eventsApi.update(eventId, {
         ...editFormData,
-        date: new Date(editFormData.date).toISOString(),
+        date: eventDateTime.toISOString(),
       });
       setEvent(updatedEvent);
       setSuccessMessage('Event updated successfully!');
@@ -279,6 +289,8 @@ export default function EventPage() {
   }
 
   const eventDate = new Date(event.date);
+  const eventStatus = getEventStatus(event.date);
+  const isExpired = isEventExpired(event.date);
 
   const getStatusBadge = (status: string | null, companions?: number) => {
     if (!status) {
@@ -338,12 +350,49 @@ export default function EventPage() {
               transition={{ duration: 0.3 }}
               className="mb-6"
             >
-              <h1 className="text-4xl font-bold text-secondary mb-2">{event.title}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-bold text-secondary mb-2">{event.title}</h1>
+                {eventStatus === 'expired' && (
+                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                    Expired
+                  </span>
+                )}
+                {eventStatus === 'active' && (
+                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                    Active
+                  </span>
+                )}
+                {eventStatus === 'upcoming' && (
+                  <span className="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                    Upcoming
+                  </span>
+                )}
+              </div>
               <p className="text-gray-600 dark:text-gray-400">Manage your event and invitations</p>
             </motion.div>
           </div>
 
           {/* Success/Error Messages */}
+          {isExpired && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg"
+            >
+              <div className="flex items-start gap-3">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">Event Has Expired</h3>
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    This event has already passed. You can no longer invite new users or accept RSVPs for this event.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -445,26 +494,36 @@ export default function EventPage() {
                 {/* Shareable RSVP Link */}
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">🔗 Shareable RSVP Link</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                    Share this link with anyone to allow them to RSVP without needing an individual invitation.
-                  </p>
-                  <div className="flex gap-2">
-                    <div className="flex-1 px-4 py-3 rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 text-sm break-all">
-                      {typeof window !== 'undefined' ? `${window.location.origin}/event/${eventId}/rsvp` : ''}
+                  {isExpired ? (
+                    <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Public RSVP link is disabled because this event has expired.
+                      </p>
                     </div>
-                    <Button
-                      variant="primary"
-                      onClick={() => {
-                        const link = `${window.location.origin}/event/${eventId}/rsvp`;
-                        navigator.clipboard.writeText(link);
-                        setSuccessMessage('Link copied to clipboard!');
-                        setTimeout(() => setSuccessMessage(null), 3000);
-                      }}
-                      className="whitespace-nowrap"
-                    >
-                      📋 Copy Link
-                    </Button>
-                  </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                        Share this link with anyone to allow them to RSVP without needing an individual invitation.
+                      </p>
+                      <div className="flex gap-2">
+                        <div className="flex-1 px-4 py-3 rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 text-sm break-all">
+                          {typeof window !== 'undefined' ? `${window.location.origin}/event/${eventId}/rsvp` : ''}
+                        </div>
+                        <Button
+                          variant="primary"
+                          onClick={() => {
+                            const link = `${window.location.origin}/event/${eventId}/rsvp`;
+                            navigator.clipboard.writeText(link);
+                            setSuccessMessage('Link copied to clipboard!');
+                            setTimeout(() => setSuccessMessage(null), 3000);
+                          }}
+                          className="whitespace-nowrap"
+                        >
+                          📋 Copy Link
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* Customize Invite Button */}
@@ -526,12 +585,20 @@ export default function EventPage() {
                       </>
                     )}
                   </Button>
-                  <Button
-                    variant="primary"
-                    onClick={() => setIsInviteModalOpen(true)}
-                  >
-                    + Invite User
-                  </Button>
+                  <div className={isExpired ? 'relative inline-block' : ''}>
+                    <Button
+                      variant="primary"
+                      onClick={() => setIsInviteModalOpen(true)}
+                      disabled={isExpired}
+                    >
+                      + Invite User
+                    </Button>
+                    {isExpired && (
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Cannot invite users to expired event
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -761,11 +828,19 @@ export default function EventPage() {
                 placeholder="John Doe"
               />
 
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  📧 An invitation email will be sent with a unique RSVP link for this event.
-                </p>
-              </div>
+              {isExpired ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <p className="text-sm text-red-800 dark:text-red-200">
+                    ⚠️ This event has expired. You cannot send new invitations.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    📧 An invitation email will be sent with a unique RSVP link for this event.
+                  </p>
+                </div>
+              )}
 
               <div className="flex gap-3 justify-end pt-4">
                 <Button
@@ -779,7 +854,7 @@ export default function EventPage() {
                 <Button
                   type="submit"
                   variant="primary"
-                  disabled={isInviting}
+                  disabled={isInviting || isExpired}
                 >
                   {isInviting ? 'Sending...' : 'Send Invitation'}
                 </Button>
@@ -824,6 +899,7 @@ export default function EventPage() {
                 type="datetime-local"
                 value={editFormData.date}
                 onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
+                min={new Date().toISOString().slice(0, 16)}
                 required
               />
 

@@ -10,6 +10,7 @@ import { Header } from '@/components/Header';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { tokensApi, rsvpsApi } from '@/lib/api/client';
+import { isEventExpired } from '@/lib/utils';
 
 interface Event {
   id: string;
@@ -155,6 +156,7 @@ export default function EventRSVPPage() {
 
   const eventDate = new Date(event.date);
   const isPastEvent = !isNaN(eventDate.getTime()) && eventDate < new Date();
+  const isExpired = isEventExpired(event.date);
 
   // Already responded view
   if (hasResponded && existingRsvp) {
@@ -283,16 +285,26 @@ export default function EventRSVPPage() {
               </div>
             )}
 
-            {isPastEvent && (
-              <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-800 rounded-lg">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">This event has already passed.</p>
+            {isExpired && (
+              <div className="mt-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <svg className="w-6 h-6 text-red-600 dark:text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-800 dark:text-red-200 mb-1">Event Has Expired</h3>
+                    <p className="text-sm text-red-700 dark:text-red-300">
+                      This event has already passed. RSVPs are no longer being accepted.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </Card>
         </motion.div>
 
         {/* RSVP Form Card */}
-        {!isPastEvent && (
+        {!isExpired && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

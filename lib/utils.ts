@@ -57,3 +57,29 @@ export const rsvpSchema = z.object({
   status: z.enum(['going', 'maybe', 'not-going']),
 });
 
+// Event status utilities
+export type EventStatus = 'active' | 'upcoming' | 'expired';
+
+export function getEventStatus(eventDate: Date | string): EventStatus {
+  const now = new Date();
+  const date = new Date(eventDate);
+  
+  // Event is expired if the date has passed
+  if (date < now) {
+    return 'expired';
+  }
+  
+  // Event is active if it's within 24 hours
+  const hoursUntilEvent = (date.getTime() - now.getTime()) / (1000 * 60 * 60);
+  if (hoursUntilEvent <= 24) {
+    return 'active';
+  }
+  
+  // Event is upcoming if it's more than 24 hours away
+  return 'upcoming';
+}
+
+export function isEventExpired(eventDate: Date | string): boolean {
+  return getEventStatus(eventDate) === 'expired';
+}
+

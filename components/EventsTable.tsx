@@ -4,6 +4,7 @@ import { Event } from '@/lib/types';
 import { Button } from './Button';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import { getEventStatus } from '@/lib/utils';
 
 interface EventsTableProps {
   events: Event[];
@@ -39,6 +40,7 @@ export function EventsTable({ events }: EventsTableProps) {
         <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
           {events.map((event, index) => {
             const eventDate = new Date(event.date);
+            const eventStatus = getEventStatus(event.date);
             const isPast = eventDate < new Date();
             const isFull = event.rsvpCount >= event.capacity;
             const spotsLeft = event.capacity - event.rsvpCount;
@@ -58,9 +60,19 @@ export function EventsTable({ events }: EventsTableProps) {
                       <h3 className="text-sm font-bold text-secondary dark:text-secondary">
                         {event.title}
                       </h3>
-                      {isPast && (
-                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                          Past
+                      {eventStatus === 'expired' && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                          Expired
+                        </span>
+                      )}
+                      {eventStatus === 'active' && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-300">
+                          Active
+                        </span>
+                      )}
+                      {eventStatus === 'upcoming' && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                          Upcoming
                         </span>
                       )}
                       {isFull && !isPast && (
@@ -105,9 +117,9 @@ export function EventsTable({ events }: EventsTableProps) {
                         Event is full
                       </div>
                     )}
-                    {isPast && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        Event ended
+                    {eventStatus === 'expired' && (
+                      <div className="text-xs text-red-600 dark:text-red-400">
+                        Event expired
                       </div>
                     )}
                   </div>

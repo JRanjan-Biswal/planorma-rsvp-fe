@@ -31,6 +31,12 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  // Get today's date in YYYY-MM-DD format for min date validation
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -38,12 +44,22 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
 
     try {
       // Combine date and time into ISO 8601 format with timezone
-      const dateTime = new Date(`${formData.date}T${formData.time}:00`).toISOString();
+      const dateTime = new Date(`${formData.date}T${formData.time}:00`);
+      
+      // Validate that the event date is not in the past
+      const now = new Date();
+      if (dateTime < now) {
+        setErrors({ general: 'Cannot create an event for a past date. Please select a future date and time.' });
+        setIsLoading(false);
+        return;
+      }
+
+      const dateTimeISO = dateTime.toISOString();
 
       await createEvent({
         title: formData.title,
         description: formData.description,
-        date: dateTime,
+        date: dateTimeISO,
         location: formData.location,
         category: formData.category,
         capacity: parseInt(formData.capacity),
@@ -109,6 +125,7 @@ export function CreateEventForm({ onSuccess }: CreateEventFormProps) {
             value={formData.date}
             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
             error={errors.date}
+            min={getTodayDate()}
             required
           />
 
