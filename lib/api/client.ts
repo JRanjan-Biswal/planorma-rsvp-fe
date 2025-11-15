@@ -430,5 +430,15 @@ export const tokensApi = {
     const data = await apiRequest<{ event: any; token: any }>(`/tokens/token/${token}`);
     return data;
   },
+
+  getStats: async (eventId: string) => {
+    const data = await apiRequest<{
+      going: { count: number; guests: number };
+      notGoing: number;
+      pending: number;
+      totalInvited: number;
+    }>(`/tokens/${eventId}/stats`);
+    return data;
+  },
 };
 

@@ -7,11 +7,12 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Card } from '@/components/Card';
 import { Button } from '@/components/Button';
 import { Input } from '@/components/Input';
-import { Select } from '@/components/Select';
 import { Header } from '@/components/Header';
 import { Accordion } from '@/components/Accordion';
-import { Modal } from '@/components/Modal';
 import { RefreshIcon } from '@/components/RefreshIcon';
+import { InviteModal } from '@/components/InviteModal';
+import { EditEventModal } from '@/components/EditEventModal';
+import { AnalyticsModal } from '@/components/AnalyticsModal';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
 import { eventsApi, tokensApi, rsvpsApi } from '@/lib/api/client';
@@ -59,6 +60,7 @@ export default function EventPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAnalyticsModalOpen, setIsAnalyticsModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     title: '',
     description: '',
@@ -78,6 +80,13 @@ export default function EventPage() {
     vegan: number;
     notSpecified: number;
   } | null>(null);
+  const [rsvpStats, setRsvpStats] = useState<{
+    going: { count: number; guests: number };
+    notGoing: number;
+    pending: number;
+    totalInvited: number;
+  } | null>(null);
+  const [allTokensForAnalytics, setAllTokensForAnalytics] = useState<UserToken[]>([]);
 
   // Pagination and filters
   const [currentPage, setCurrentPage] = useState(1);
@@ -103,7 +112,9 @@ export default function EventPage() {
       hasFetchedRef.current = eventId;
       fetchEvent();
       fetchDietaryStats();
+      fetchRsvpStats();
       fetchUserTokens(); // Initial fetch of tokens (now includes public RSVPs)
+      fetchAllTokensForAnalytics(); // Fetch all tokens for analytics
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, authLoading, eventId]);
@@ -156,10 +167,23 @@ export default function EventPage() {
     }
   };
 
+  const fetchAllTokensForAnalytics = async () => {
+    try {
+      // Fetch all tokens without pagination for analytics
+      const data = await tokensApi.getAll(eventId, 1, 999999, '', '', '');
+      setAllTokensForAnalytics(data.tokens);
+    } catch (err) {
+      console.error('Failed to load tokens for analytics');
+    }
+  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await fetchUserTokens();
+      await fetchAllTokensForAnalytics();
+      await fetchRsvpStats();
+      await fetchDietaryStats();
       setSuccessMessage('List refreshed successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
@@ -189,6 +213,15 @@ export default function EventPage() {
     }
   };
 
+  const fetchRsvpStats = async () => {
+    try {
+      const stats = await tokensApi.getStats(eventId);
+      setRsvpStats(stats);
+    } catch (err) {
+      console.error('Failed to load RSVP stats');
+    }
+  };
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsInviting(true);
@@ -203,6 +236,8 @@ export default function EventPage() {
       setInviteName('');
       setIsInviteModalOpen(false);
       fetchUserTokens();
+      fetchAllTokensForAnalytics();
+      fetchRsvpStats();
       fetchDietaryStats();
     } catch (err: any) {
       setError(err?.message || 'Failed to send invitation');
@@ -429,14 +464,24 @@ export default function EventPage() {
                     <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1">Description</h4>
                     <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300">{event.description}</p>
                   </div>
-                  <Button
-                    variant="outline"
-                    onClick={handleEditClick}
-                    size="sm"
-                    className="w-full sm:w-auto sm:ml-4 whitespace-nowrap"
-                  >
-                    ✏️ Edit Event
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAnalyticsModalOpen(true)}
+                      size="sm"
+                      className="w-full sm:w-auto whitespace-nowrap"
+                    >
+                      📊 View Analytics
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleEditClick}
+                      size="sm"
+                      className="w-full sm:w-auto whitespace-nowrap"
+                    >
+                      ✏️ Edit Event
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -822,7 +867,7 @@ export default function EventPage() {
           </motion.div>
 
           {/* Invite Modal */}
-          <Modal
+          <InviteModal
             isOpen={isInviteModalOpen}
             onClose={() => {
               setIsInviteModalOpen(false);
@@ -830,195 +875,35 @@ export default function EventPage() {
               setInviteName('');
               setError(null);
             }}
-            title="Invite User to Event"
-          >
-            <form onSubmit={handleInvite} className="space-y-4">
-              <Input
-                label="Email Address"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                placeholder="user@example.com"
-                required
-              />
-
-              <Input
-                label="Name (Optional)"
-                type="text"
-                value={inviteName}
-                onChange={(e) => setInviteName(e.target.value)}
-                placeholder="John Doe"
-              />
-
-              {isExpired ? (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <p className="text-sm text-red-800 dark:text-red-200">
-                    ⚠️ This event has expired. You cannot send new invitations.
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    📧 An invitation email will be sent with a unique RSVP link for this event.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-3 justify-end pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsInviteModalOpen(false)}
-                  disabled={isInviting}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isInviting || isExpired}
-                >
-                  {isInviting ? 'Sending...' : 'Send Invitation'}
-                </Button>
-              </div>
-            </form>
-          </Modal>
+            inviteEmail={inviteEmail}
+            inviteName={inviteName}
+            onEmailChange={setInviteEmail}
+            onNameChange={setInviteName}
+            onSubmit={handleInvite}
+            isInviting={isInviting}
+            isExpired={isExpired}
+          />
 
           {/* Edit Event Modal */}
-          <Modal
+          <EditEventModal
             isOpen={isEditModalOpen}
             onClose={() => {
               setIsEditModalOpen(false);
               setError(null);
             }}
-            title="Edit Event"
-          >
-            <form onSubmit={handleUpdateEvent} className="space-y-4">
-              <Input
-                label="Event Title"
-                type="text"
-                value={editFormData.title}
-                onChange={(e) => setEditFormData({ ...editFormData, title: e.target.value })}
-                placeholder="Annual Company Gala"
-                required
-              />
+            formData={editFormData}
+            onFormDataChange={setEditFormData}
+            onSubmit={handleUpdateEvent}
+            isUpdating={isUpdating}
+          />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={editFormData.description}
-                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  placeholder="Describe your event..."
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-[#2a2a2a] text-gray-900 dark:text-gray-100 focus:outline-none focus:border-primary transition-colors"
-                />
-              </div>
-
-              <Input
-                label="Date & Time"
-                type="datetime-local"
-                value={editFormData.date}
-                onChange={(e) => setEditFormData({ ...editFormData, date: e.target.value })}
-                min={new Date().toISOString().slice(0, 16)}
-                required
-              />
-
-              <Input
-                label="Location"
-                type="text"
-                value={editFormData.location}
-                onChange={(e) => setEditFormData({ ...editFormData, location: e.target.value })}
-                placeholder="New York City, NY"
-                required
-              />
-
-              <Select
-                label="Category"
-                value={editFormData.category}
-                onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                required
-              >
-                <option value="">Select a category</option>
-                <option value="Wedding">Wedding</option>
-                <option value="Marriage">Marriage</option>
-                <option value="Party">Party</option>
-                <option value="Conference">Conference</option>
-                <option value="Birthday">Birthday</option>
-                <option value="Business">Business</option>
-                <option value="Wellness">Wellness</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="Social">Social</option>
-              </Select>
-
-              <Input
-                label="Capacity"
-                type="number"
-                value={editFormData.capacity.toString()}
-                onChange={(e) => setEditFormData({ ...editFormData, capacity: parseInt(e.target.value) || 0 })}
-                placeholder="100"
-                min="10"
-                required
-              />
-
-              <Input
-                label="Allowed Companions per Guest"
-                type="number"
-                value={editFormData.allowedCompanions.toString()}
-                onChange={(e) => setEditFormData({ ...editFormData, allowedCompanions: parseInt(e.target.value) || 0 })}
-                placeholder="0"
-                min="0"
-                max="10"
-                required
-              />
-
-              <Input
-                label="Host Name"
-                type="text"
-                value={editFormData.hostName}
-                onChange={(e) => setEditFormData({ ...editFormData, hostName: e.target.value })}
-                placeholder="John Doe"
-                required
-              />
-
-              <Input
-                label="Host Mobile"
-                type="tel"
-                value={editFormData.hostMobile}
-                onChange={(e) => setEditFormData({ ...editFormData, hostMobile: e.target.value })}
-                placeholder="+1 (555) 123-4567"
-                required
-              />
-
-              <Input
-                label="Host Email"
-                type="email"
-                value={editFormData.hostEmail}
-                onChange={(e) => setEditFormData({ ...editFormData, hostEmail: e.target.value })}
-                placeholder="host@example.com"
-                required
-              />
-
-              <div className="flex gap-3 justify-end pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditModalOpen(false)}
-                  disabled={isUpdating}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? 'Updating...' : 'Update Event'}
-                </Button>
-              </div>
-            </form>
-          </Modal>
+          {/* Analytics Modal */}
+          <AnalyticsModal
+            isOpen={isAnalyticsModalOpen}
+            onClose={() => setIsAnalyticsModalOpen(false)}
+            rsvpStats={rsvpStats}
+            dietaryStats={dietaryStats}
+          />
         </div>
       </div>
     </div>
