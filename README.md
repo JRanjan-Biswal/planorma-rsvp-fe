@@ -90,7 +90,7 @@ npm install
 **Backend** (`backend/.env`):
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://jranjan2016_db_user:bsCjx25grPUiQp62@cluster0.6eoqlon.mongodb.net/happyhosts?retryWrites=true&w=majority
+MONGODB_URI=mongodburl
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 JWT_EXPIRES_IN=7d
 NODE_ENV=development
